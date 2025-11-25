@@ -1,0 +1,215 @@
+import express from 'express';
+import multer from 'multer';
+import { authenticateToken } from './auth.js';
+import { getSupabase } from '../db/database.js';
+import { uploadImageFromBuffer, deleteImage, isCloudinaryUrl } from '../utils/cloudinary.js';
+
+const router = express.Router();
+
+// Configure multer with memory storage (we'll upload to Cloudinary manually)
+const storage = multer.memoryStorage();
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(file.originalname.toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed (JPEG, PNG, GIF, WebP)'));
+    }
+  }
+});
+
+// Get all ads (admin only)
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    const { data: ads, error } = await supabase
+      .from('ads')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(ads || []);
+  } catch (error) {
+    console.error('Error fetching ads:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get single ad (admin only)
+router.get('/:id', authenticateToken, async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    const { data: ad, error } = await supabase
+      .from('ads')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+
+    if (error || !ad) {
+      return res.status(404).json({ error: 'Ad not found' });
+    }
+
+    res.json(ad);
+  } catch (error) {
+    console.error('Error fetching ad:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Create new ad (admin only)
+router.post('/', authenticateToken, upload.single('image'), async (req, res) => {
+  try {
+    const { title, description, cta_url, category, timeframe_days, is_active } = req.body;
+
+    if (!title || !description || !cta_url || !category || !timeframe_days) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Upload image to Cloudinary if provided
+    let imageUrl = null;
+    if (req.file) {
+      try {
+        imageUrl = await uploadImageFromBuffer(req.file.buffer);
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError);
+        return res.status(500).json({ error: 'Failed to upload image' });
+      }
+    }
+
+    const supabase = getSupabase();
+    const { data: newAd, error } = await supabase
+      .from('ads')
+      .insert({
+        title,
+        description,
+        image_url: imageUrl,
+        cta_url,
+        category,
+        timeframe_days: parseInt(timeframe_days),
+        is_active: is_active !== undefined ? (is_active === 'true' || is_active === true) : true
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(newAd);
+  } catch (error) {
+    console.error('Error creating ad:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update ad (admin only)
+router.put('/:id', authenticateToken, upload.single('image'), async (req, res) => {
+  try {
+    const { title, description, cta_url, category, timeframe_days, is_active } = req.body;
+    const supabase = getSupabase();
+
+    // Get existing ad
+    const { data: existingAd, error: fetchError } = await supabase
+      .from('ads')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+
+    if (fetchError || !existingAd) {
+      return res.status(404).json({ error: 'Ad not found' });
+    }
+
+    let imageUrl = existingAd.image_url;
+    
+    // If new image uploaded, delete old one from Cloudinary and upload new one
+    if (req.file) {
+      // Delete old image from Cloudinary if it exists
+      if (existingAd.image_url && isCloudinaryUrl(existingAd.image_url)) {
+        await deleteImage(existingAd.image_url);
+      }
+      
+      // Upload new image to Cloudinary
+      try {
+        imageUrl = await uploadImageFromBuffer(req.file.buffer);
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError);
+        return res.status(500).json({ error: 'Failed to upload image' });
+      }
+    }
+
+    const updateData = {
+      title: title || existingAd.title,
+      description: description || existingAd.description,
+      image_url: imageUrl,
+      cta_url: cta_url || existingAd.cta_url,
+      category: category || existingAd.category,
+      timeframe_days: timeframe_days ? parseInt(timeframe_days) : existingAd.timeframe_days,
+      is_active: is_active !== undefined ? (is_active === 'true' || is_active === true) : existingAd.is_active
+    };
+
+    const { data: updatedAd, error } = await supabase
+      .from('ads')
+      .update(updateData)
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(updatedAd);
+  } catch (error) {
+    console.error('Error updating ad:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete ad (admin only)
+router.delete('/:id', authenticateToken, async (req, res) => {
+  try {
+    const supabase = getSupabase();
+
+    // Get ad to delete image
+    const { data: ad, error: fetchError } = await supabase
+      .from('ads')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+
+    if (fetchError || !ad) {
+      return res.status(404).json({ error: 'Ad not found' });
+    }
+
+    // Delete associated image from Cloudinary
+    if (ad.image_url && isCloudinaryUrl(ad.image_url)) {
+      await deleteImage(ad.image_url);
+    }
+
+    const { error } = await supabase
+      .from('ads')
+      .delete()
+      .eq('id', req.params.id);
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({ message: 'Ad deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting ad:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+export { router as adsRoutes };

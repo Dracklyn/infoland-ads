@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infoland Ads Management</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen">
+      <div class="login-container">
+        <div class="login-card">
+          <h1 class="login-title">Infoland Ads</h1>
+          <p class="login-subtitle">Admin Access</p>
+          <form id="login-form">
+            <div class="form-group">
+              <label for="username">Username</label>
+              <input type="text" id="username" name="username" required autocomplete="username">
+            </div>
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input type="password" id="password" name="password" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn btn-primary">Sign In</button>
+            <div id="login-error" class="error-message"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard-screen" class="screen hidden">
+      <header class="header">
+        <div class="header-content">
+          <h1 class="header-title">Ads Management</h1>
+          <div class="header-actions">
+            <button id="new-ad-btn" class="btn btn-primary">+ New Ad</button>
+            <button id="logout-btn" class="btn btn-secondary">Logout</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <!-- Ad List -->
+        <div id="ads-list-container">
+          <div class="section-header">
+            <h2>All Ads</h2>
+            <div id="ads-count" class="count-badge">0 ads</div>
+          </div>
+          <div id="ads-list" class="ads-list">
+            <!-- Ads will be loaded here -->
+          </div>
+        </div>
+
+        <!-- Ad Form (initially hidden) -->
+        <div id="ad-form-container" class="hidden">
+          <div class="form-card">
+            <div class="form-header">
+              <h2 id="form-title">Create New Ad</h2>
+              <button id="close-form-btn" class="close-btn">×</button>
+            </div>
+            <form id="ad-form">
+              <input type="hidden" id="ad-id" name="id">
+              
+              <div class="form-group">
+                <label for="ad-title">Title *</label>
+                <input type="text" id="ad-title" name="title" required>
+              </div>
+
+              <div class="form-group">
+                <label for="ad-description">Description *</label>
+                <textarea id="ad-description" name="description" rows="4" required></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="ad-cta-url">Call-to-Action URL *</label>
+                <input type="url" id="ad-cta-url" name="cta_url" placeholder="https://example.com" required>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="ad-category">Category *</label>
+                  <select id="ad-category" name="category" required>
+                    <option value="">Select category</option>
+                    <option value="news">News</option>
+                    <option value="technology">Technology</option>
+                    <option value="business">Business</option>
+                    <option value="lifestyle">Lifestyle</option>
+                    <option value="sports">Sports</option>
+                    <option value="entertainment">Entertainment</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="ad-timeframe">Timeframe (days) *</label>
+                  <input type="number" id="ad-timeframe" name="timeframe_days" min="1" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="ad-image">Image</label>
+                <input type="file" id="ad-image" name="image" accept="image/*">
+                <div id="image-preview" class="image-preview"></div>
+                <small class="form-hint">Optional. Max 5MB. Supported formats: JPG, PNG, GIF, WebP</small>
+              </div>
+
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="ad-is-active" name="is_active" checked>
+                  <span>Active</span>
+                </label>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" id="cancel-form-btn" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Ad</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
