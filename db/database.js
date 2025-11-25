@@ -11,6 +11,11 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error('Missing Supabase environment variables. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY)');
 }
 
+// Warn if service role key is not set (admin operations may be limited by RLS)
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.warn('⚠️  WARNING: SUPABASE_SERVICE_ROLE_KEY not set. Using anon key. Admin operations may be limited by Row Level Security (RLS) policies.');
+}
+
 // Use service role key for admin operations, or anon key for public operations
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
