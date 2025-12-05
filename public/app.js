@@ -849,22 +849,58 @@ window.deleteAdmin = deleteAdmin;
 
 // Admin Management Functions
 function showAdminsView() {
-  document.getElementById('ads-list-container').classList.add('hidden');
-  document.getElementById('ad-form-container').classList.add('hidden');
+  // Hide ads views
+  const adsContainer = document.getElementById('ads-list-container');
+  const adFormContainer = document.getElementById('ad-form-container');
+  if (adsContainer) adsContainer.classList.add('hidden');
+  if (adFormContainer) adFormContainer.classList.add('hidden');
+  
+  // Show admin view
   if (adminsContainer) {
     adminsContainer.classList.remove('hidden');
     loadAdmins();
   }
+  
+  // Hide admin form if open
+  if (adminFormContainer) {
+    adminFormContainer.classList.add('hidden');
+  }
+  
+  // Update button text to show we can go back
+  if (adminsBtn) {
+    adminsBtn.textContent = '← Back to Ads';
+    // Remove old listener and add new one for toggle
+    const newBtn = adminsBtn.cloneNode(true);
+    adminsBtn.parentNode.replaceChild(newBtn, adminsBtn);
+    adminsBtn = newBtn;
+    adminsBtn.addEventListener('click', showAdsView);
+  }
 }
 
 function showAdsView() {
+  // Hide admin views
   if (adminsContainer) {
     adminsContainer.classList.add('hidden');
   }
   if (adminFormContainer) {
     adminFormContainer.classList.add('hidden');
   }
-  document.getElementById('ads-list-container').classList.remove('hidden');
+  
+  // Show ads view
+  const adsContainer = document.getElementById('ads-list-container');
+  if (adsContainer) {
+    adsContainer.classList.remove('hidden');
+  }
+  
+  // Update button text back to "Manage Admins"
+  if (adminsBtn) {
+    adminsBtn.textContent = 'Manage Admins';
+    // Remove old listener and add new one for toggle
+    const newBtn = adminsBtn.cloneNode(true);
+    adminsBtn.parentNode.replaceChild(newBtn, adminsBtn);
+    adminsBtn = newBtn;
+    adminsBtn.addEventListener('click', showAdminsView);
+  }
 }
 
 async function loadAdmins() {
@@ -965,16 +1001,22 @@ function hideAdminForm() {
   if (adminFormContainer) {
     adminFormContainer.classList.add('hidden');
   }
+  // Show admin list (not ads) when closing form
   if (adminsContainer) {
     adminsContainer.classList.remove('hidden');
   }
   if (adminForm) {
     adminForm.reset();
   }
-  document.getElementById('admin-id').value = '';
-  document.getElementById('admin-username').disabled = false;
-  document.getElementById('admin-password-fields').style.display = 'block';
-  document.getElementById('admin-change-password-fields').style.display = 'none';
+  const adminIdField = document.getElementById('admin-id');
+  const adminUsernameField = document.getElementById('admin-username');
+  const passwordFields = document.getElementById('admin-password-fields');
+  const changePasswordFields = document.getElementById('admin-change-password-fields');
+  
+  if (adminIdField) adminIdField.value = '';
+  if (adminUsernameField) adminUsernameField.disabled = false;
+  if (passwordFields) passwordFields.style.display = 'block';
+  if (changePasswordFields) changePasswordFields.style.display = 'none';
 }
 
 async function handleAdminSubmit(e) {
