@@ -628,6 +628,62 @@ body {
   font-size: 14px;
 }
 
+/* Admin Management Styles */
+.admin-actions-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
+
+.admins-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-card {
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.admin-card:hover {
+  box-shadow: 0 4px 12px rgba(62, 89, 70, 0.1);
+  transform: translateY(-2px);
+}
+
+.admin-content {
+  flex: 1;
+}
+
+.admin-username {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+}
+
+.admin-meta {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.admin-actions .btn {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
 .btn-toggle {
   background: var(--color-primary-light);
   color: var(--color-primary);
@@ -709,6 +765,29 @@ body {
 
   .ad-actions {
     flex-direction: row;
+  }
+
+  .admin-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .admin-actions {
+    width: 100%;
+  }
+
+  .admin-actions .btn {
+    flex: 1;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+    min-width: calc(50% - 6px);
   }
 }
 

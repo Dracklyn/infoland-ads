@@ -13,6 +13,8 @@ let loginScreen, dashboardScreen, loginForm, logoutBtn, newAdBtn;
 let adsList, adsCount, adFormContainer, adForm;
 let closeFormBtn, cancelFormBtn, loginError, imagePreview, adImageInput;
 let searchInput, clearSearchBtn;
+let adminsBtn, backToAdsBtn, adminsContainer, adminsList, newAdminBtn;
+let adminFormContainer, adminForm, closeAdminFormBtn, cancelAdminFormBtn;
 
 // Initialize DOM elements
 function initDOMElements() {
@@ -32,6 +34,15 @@ function initDOMElements() {
   adImageInput = document.getElementById('ad-image');
   searchInput = document.getElementById('search-input');
   clearSearchBtn = document.getElementById('clear-search');
+  adminsBtn = document.getElementById('admins-btn');
+  backToAdsBtn = document.getElementById('back-to-ads-btn');
+  adminsContainer = document.getElementById('admins-container');
+  adminsList = document.getElementById('admins-list');
+  newAdminBtn = document.getElementById('new-admin-btn');
+  adminFormContainer = document.getElementById('admin-form-container');
+  adminForm = document.getElementById('admin-form');
+  closeAdminFormBtn = document.getElementById('close-admin-form-btn');
+  cancelAdminFormBtn = document.getElementById('cancel-admin-form-btn');
   
   if (!adsList) {
     console.error('ads-list element not found in DOM!');
@@ -78,6 +89,26 @@ function setupEventListeners() {
   if (clearSearchBtn) {
     clearSearchBtn.addEventListener('click', clearSearch);
   }
+  
+  // Admin management
+  if (adminsBtn) {
+    adminsBtn.addEventListener('click', showAdminsView);
+  }
+  if (backToAdsBtn) {
+    backToAdsBtn.addEventListener('click', showAdsView);
+  }
+  if (newAdminBtn) {
+    newAdminBtn.addEventListener('click', () => showAdminForm());
+  }
+  if (closeAdminFormBtn) {
+    closeAdminFormBtn.addEventListener('click', hideAdminForm);
+  }
+  if (cancelAdminFormBtn) {
+    cancelAdminFormBtn.addEventListener('click', hideAdminForm);
+  }
+  if (adminForm) {
+    adminForm.addEventListener('submit', handleAdminSubmit);
+  }
 }
 
 function initializeApp() {
@@ -102,9 +133,9 @@ document.addEventListener('click', (e) => {
   const button = e.target.closest('button[data-action]');
   if (button) {
     const action = button.dataset.action;
-    const adId = parseInt(button.dataset.adId);
+    const adId = button.dataset.adId; // UUID is a string, not an integer
     
-    if (!adId || isNaN(adId)) {
+    if (!adId || adId.trim() === '') {
       console.error('Invalid ad ID:', button.dataset.adId);
       return;
     }
@@ -813,4 +844,226 @@ async function toggleAdStatus(id, newStatus) {
 window.editAd = editAd;
 window.deleteAd = deleteAd;
 window.toggleAdStatus = toggleAdStatus;
+window.changeAdminPassword = changeAdminPassword;
+window.deleteAdmin = deleteAdmin;
+
+// Admin Management Functions
+function showAdminsView() {
+  document.getElementById('ads-list-container').classList.add('hidden');
+  document.getElementById('ad-form-container').classList.add('hidden');
+  if (adminsContainer) {
+    adminsContainer.classList.remove('hidden');
+    loadAdmins();
+  }
+}
+
+function showAdsView() {
+  if (adminsContainer) {
+    adminsContainer.classList.add('hidden');
+  }
+  if (adminFormContainer) {
+    adminFormContainer.classList.add('hidden');
+  }
+  document.getElementById('ads-list-container').classList.remove('hidden');
+}
+
+async function loadAdmins() {
+  if (!adminsList) return;
+  
+  try {
+    const response = await fetch(`${API_BASE}/admins`, {
+      headers: {
+        'Authorization': `Bearer ${authToken}`
+      }
+    });
+
+    if (response.ok) {
+      const admins = await response.json();
+      renderAdmins(admins);
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Failed to load admins:', response.status, errorData);
+      adminsList.innerHTML = `
+        <div class="empty-state">
+          <h3>Error loading admins</h3>
+          <p>${errorData.error || 'Please try refreshing the page'}</p>
+        </div>
+      `;
+    }
+  } catch (error) {
+    console.error('Error loading admins:', error);
+    adminsList.innerHTML = `
+      <div class="empty-state">
+        <h3>Error loading admins</h3>
+        <p>Network error. Please check your connection.</p>
+      </div>
+    `;
+  }
+}
+
+function renderAdmins(admins) {
+  if (!adminsList) return;
+  
+  if (!admins || admins.length === 0) {
+    adminsList.innerHTML = '<div class="empty-state"><h3>No admins yet</h3><p>Create your first admin user</p></div>';
+    return;
+  }
+  
+  adminsList.innerHTML = admins.map(admin => {
+    const createdDate = admin.created_at ? formatDate(admin.created_at) : 'N/A';
+    return `
+      <div class="admin-card">
+        <div class="admin-content">
+          <h3 class="admin-username">${escapeHtml(admin.username)}</h3>
+          <p class="admin-meta">Created: ${createdDate}</p>
+        </div>
+        <div class="admin-actions">
+          <button class="btn btn-primary" onclick="changeAdminPassword('${admin.id}', '${escapeHtml(admin.username)}')">Change Password</button>
+          <button class="btn btn-secondary" onclick="deleteAdmin('${admin.id}', '${escapeHtml(admin.username)}')">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function showAdminForm(admin = null, isPasswordChange = false) {
+  const formTitle = document.getElementById('admin-form-title');
+  const passwordFields = document.getElementById('admin-password-fields');
+  const changePasswordFields = document.getElementById('admin-change-password-fields');
+  
+  if (isPasswordChange && admin) {
+    formTitle.textContent = `Change Password: ${admin.username}`;
+    document.getElementById('admin-id').value = admin.id;
+    document.getElementById('admin-username').value = admin.username;
+    document.getElementById('admin-username').disabled = true;
+    passwordFields.style.display = 'none';
+    changePasswordFields.style.display = 'block';
+  } else if (admin) {
+    formTitle.textContent = 'Edit Admin';
+    document.getElementById('admin-id').value = admin.id;
+    document.getElementById('admin-username').value = admin.username;
+    passwordFields.style.display = 'none';
+    changePasswordFields.style.display = 'none';
+  } else {
+    formTitle.textContent = 'Create New Admin';
+    adminForm.reset();
+    document.getElementById('admin-id').value = '';
+    document.getElementById('admin-username').disabled = false;
+    passwordFields.style.display = 'block';
+    changePasswordFields.style.display = 'none';
+  }
+  
+  if (adminFormContainer) {
+    adminFormContainer.classList.remove('hidden');
+  }
+  if (adminsContainer) {
+    adminsContainer.classList.add('hidden');
+  }
+}
+
+function hideAdminForm() {
+  if (adminFormContainer) {
+    adminFormContainer.classList.add('hidden');
+  }
+  if (adminsContainer) {
+    adminsContainer.classList.remove('hidden');
+  }
+  if (adminForm) {
+    adminForm.reset();
+  }
+  document.getElementById('admin-id').value = '';
+  document.getElementById('admin-username').disabled = false;
+  document.getElementById('admin-password-fields').style.display = 'block';
+  document.getElementById('admin-change-password-fields').style.display = 'none';
+}
+
+async function handleAdminSubmit(e) {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const adminId = formData.get('id');
+  const username = formData.get('username');
+  const password = formData.get('password');
+  const currentPassword = formData.get('currentPassword');
+  const newPassword = formData.get('newPassword');
+  
+  const isPasswordChange = currentPassword && newPassword;
+  const isEdit = !!adminId && !isPasswordChange;
+
+  try {
+    let response;
+    
+    if (isPasswordChange) {
+      // Change password
+      response = await fetch(`${API_BASE}/admins/${adminId}/password`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword
+        })
+      });
+    } else if (isEdit) {
+      // Edit admin (currently only password change is supported for editing)
+      alert('To change password, use the "Change Password" button');
+      return;
+    } else {
+      // Create new admin
+      response = await fetch(`${API_BASE}/admins`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username,
+          password
+        })
+      });
+    }
+
+    if (response.ok) {
+      hideAdminForm();
+      loadAdmins();
+    } else {
+      const data = await response.json();
+      alert(data.error || 'Failed to save admin');
+    }
+  } catch (error) {
+    console.error('Error saving admin:', error);
+    alert('Network error. Please try again.');
+  }
+}
+
+async function changeAdminPassword(adminId, username) {
+  const admin = { id: adminId, username };
+  showAdminForm(admin, true);
+}
+
+async function deleteAdmin(adminId, username) {
+  if (!confirm(`Are you sure you want to delete admin "${username}"?`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/admins/${adminId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${authToken}`
+      }
+    });
+
+    if (response.ok) {
+      loadAdmins();
+    } else {
+      const data = await response.json();
+      alert(data.error || 'Failed to delete admin');
+    }
+  } catch (error) {
+    console.error('Error deleting admin:', error);
+    alert('Network error. Please try again.');
+  }
+}
 

@@ -1,9 +1,12 @@
 -- Supabase Database Schema for Infoland Ads Management
 -- Run this SQL in your Supabase SQL Editor to create the tables
 
--- Create ads table
+-- Enable UUID extension (if not already enabled)
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Create ads table with UUID primary key
 CREATE TABLE IF NOT EXISTS ads (
-  id BIGSERIAL PRIMARY KEY,
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   title TEXT NOT NULL,
   description TEXT NOT NULL,
   image_url TEXT,
@@ -15,9 +18,9 @@ CREATE TABLE IF NOT EXISTS ads (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create admin_users table
+-- Create admin_users table with UUID primary key
 CREATE TABLE IF NOT EXISTS admin_users (
-  id BIGSERIAL PRIMARY KEY,
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   username TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()

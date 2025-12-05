@@ -7,6 +7,7 @@ import { initDatabase } from './db/database.js';
 import { authRoutes } from './routes/auth.js';
 import { adsRoutes } from './routes/ads.js';
 import { apiRoutes } from './routes/api.js';
+import { adminsRoutes } from './routes/admins.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -29,9 +30,10 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/ads', adsRoutes);
-app.use('/api/integration', apiRoutes);
+app.use('/api/auth', authRoutes); // Internal: Admin authentication
+app.use('/api/ads', adsRoutes); // Internal: Admin ad management (requires auth)
+app.use('/api/integration', apiRoutes); // External: Public API for mobile app
+app.use('/api/admins', adminsRoutes); // Internal: Admin user management (requires auth, not for external use)
 
 // Serve admin interface for all other routes
 app.get('*', (req, res) => {

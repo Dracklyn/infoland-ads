@@ -39,6 +39,7 @@
         <div class="header-content">
           <h1 class="header-title">Ads Management</h1>
           <div class="header-actions">
+            <button id="admins-btn" class="btn btn-secondary">Manage Admins</button>
             <button id="new-ad-btn" class="btn btn-primary">+ New Ad</button>
             <button id="logout-btn" class="btn btn-secondary">Logout</button>
           </div>
@@ -135,6 +136,64 @@
               <div class="form-actions">
                 <button type="button" id="cancel-form-btn" class="btn btn-secondary">Cancel</button>
                 <button type="submit" class="btn btn-primary">Save Ad</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Admin Management (initially hidden) -->
+        <div id="admins-container" class="hidden">
+          <div class="section-header">
+            <h2>Admin Management</h2>
+            <button id="back-to-ads-btn" class="btn btn-secondary">← Back to Ads</button>
+          </div>
+          <div class="admin-actions-header">
+            <button id="new-admin-btn" class="btn btn-primary">+ New Admin</button>
+          </div>
+          <div id="admins-list" class="admins-list">
+            <!-- Admins will be loaded here -->
+          </div>
+        </div>
+
+        <!-- Admin Form (initially hidden) -->
+        <div id="admin-form-container" class="hidden">
+          <div class="form-card">
+            <div class="form-header">
+              <h2 id="admin-form-title">Create New Admin</h2>
+              <button id="close-admin-form-btn" class="close-btn">×</button>
+            </div>
+            <form id="admin-form">
+              <input type="hidden" id="admin-id" name="id">
+              
+              <div class="form-group">
+                <label for="admin-username">Username *</label>
+                <input type="text" id="admin-username" name="username" required minlength="3" autocomplete="username">
+                <small class="form-hint">Minimum 3 characters</small>
+              </div>
+
+              <div id="admin-password-fields">
+                <div class="form-group">
+                  <label for="admin-password">Password *</label>
+                  <input type="password" id="admin-password" name="password" required minlength="6" autocomplete="new-password">
+                  <small class="form-hint">Minimum 6 characters</small>
+                </div>
+              </div>
+
+              <div id="admin-change-password-fields" style="display: none;">
+                <div class="form-group">
+                  <label for="admin-current-password">Current Password *</label>
+                  <input type="password" id="admin-current-password" name="currentPassword" autocomplete="current-password">
+                </div>
+                <div class="form-group">
+                  <label for="admin-new-password">New Password *</label>
+                  <input type="password" id="admin-new-password" name="newPassword" minlength="6" autocomplete="new-password">
+                  <small class="form-hint">Minimum 6 characters</small>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" id="cancel-admin-form-btn" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Admin</button>
               </div>
             </form>
           </div>
